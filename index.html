@@ -63,7 +63,10 @@
     --paper:      #f4f2ef;              /* body text on the dark field */
     --accent:     var(--color-process-yellow, #edbb00);  /* press yellow, the system's warm spot colour */
     --gutter:     clamp(22px, 5vw, 76px);
-    --media-h:    min(50svh, 72vw, 420px);  /* portrait: height of the image plate */
+    /* How far the plate behind the copy fades in. A fixed length, not a
+       percentage, so it is at full density by the time it reaches the
+       kicker on any screen height. */
+    --fade:       clamp(60px, 10vh, 150px);
   }
 
   * { box-sizing: border-box; }
@@ -96,10 +99,11 @@
 
   /* ---------------------------------------------------------------
      Stage
-     Mobile-first = the "split" layout: an image plate at the top, type
-     on a solid dark field below. This exists because the clip is
-     1440x608 (2.37:1); letting it cover a tall phone viewport would
-     throw away 80% of the frame and guarantee nothing about contrast.
+     The video is a full-bleed background at every size, with all type
+     overlaid on top of it. Legibility comes from two gradient plates
+     attached to the text blocks themselves (.masthead and .lede) plus
+     a shadow on the glyphs — not from a viewport-height gradient,
+     which drifts out from under the copy on short screens.
      --------------------------------------------------------------- */
   .stage {
     position: relative;
@@ -114,7 +118,13 @@
   .masthead {
     position: relative;
     z-index: 2;
-    padding: clamp(18px, 3.4vh, 30px) var(--gutter) 0;
+    padding: clamp(18px, 3.4vh, 30px) var(--gutter) clamp(30px, 5vh, 60px);
+    /* Plate sized by the masthead, not the window. */
+    background: linear-gradient(to bottom,
+      rgba(20,16,14,0.62) 0%,
+      rgba(20,16,14,0.52) 46%,
+      rgba(20,16,14,0.26) 74%,
+      rgba(20,16,14,0.00) 100%);
   }
 
   .wordmark {
@@ -126,6 +136,7 @@
     line-height: 1;
     letter-spacing: 0.03em;
     color: var(--paper);
+    text-shadow: 0 1px 3px rgba(20,16,14,0.55), 0 2px 22px rgba(20,16,14,0.75);
   }
 
   /* Broadsheet's front-page furniture: the one place the system prints a rule. */
@@ -138,13 +149,11 @@
     opacity: 0.9;
   }
 
-  /* ---- image plate ---------------------------------------------- */
+  /* ---- background video ------------------------------------------ */
   .media {
-    position: relative;
+    position: absolute;
+    inset: 0;
     z-index: 0;
-    flex: 0 0 auto;
-    height: var(--media-h);
-    margin-top: clamp(16px, 2.6vh, 26px);
     background: var(--ink) url("media/poster.jpg") center/cover no-repeat;
   }
 
@@ -154,24 +163,20 @@
     height: 100%;
     object-fit: cover;
     object-position: center;
-    /* A light warm grade only — the sunrise already has the colour.
-       No sepia, no hue-rotate: the previous wash removed the reason
-       for using this footage. */
-    filter: saturate(1.06) contrast(1.03);
+    /* A light warm grade, plus a small overall brightness cut so the
+       image sits behind the type rather than competing with it.
+       No sepia, no hue-rotate: the old wash removed the reason for
+       using this footage in the first place. */
+    filter: saturate(1.08) contrast(1.02) brightness(0.88);
   }
 
+  /* An even veil over the whole frame — keeps the picture fully visible
+     while lifting every part of it away from white text. */
   .scrim {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background:
-      linear-gradient(to bottom,
-        rgba(20,16,14,0.28) 0%,
-        rgba(20,16,14,0.00) 26%,
-        rgba(20,16,14,0.00) 52%,
-        rgba(32,30,29,0.55) 80%,
-        rgba(32,30,29,0.92) 95%,
-        rgb(32,30,29)       99%);
+    background: rgba(20,16,14,0.20);
   }
 
   /* ---- type ------------------------------------------------------ */
@@ -181,14 +186,22 @@
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-end;   /* copy anchors to the bottom at every size */
   }
 
+  /* Plate under the copy. Fades in over a fixed distance, so it is at
+     full density where the kicker starts whatever the screen height. */
   .lede {
     display: flex;
     flex-direction: column;
     gap: clamp(14px, 2.2vh, 22px);
-    padding: clamp(26px, 4.5vh, 52px) var(--gutter);
+    padding: var(--fade) var(--gutter) clamp(18px, 2.6vh, 36px);
+    background: linear-gradient(to bottom,
+      rgba(20,16,14,0.00) 0,
+      rgba(20,16,14,0.26) calc(var(--fade) * 0.42),
+      rgba(20,16,14,0.56) calc(var(--fade) * 0.78),
+      rgba(20,16,14,0.66) var(--fade),
+      rgba(20,16,14,0.70) 100%);
   }
 
   .kicker {
@@ -198,6 +211,7 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--accent);
+    text-shadow: 0 1px 2px rgba(20,16,14,0.7), 0 1px 14px rgba(20,16,14,0.8);
   }
 
   .display {
@@ -210,6 +224,7 @@
     letter-spacing: -0.02em;
     text-wrap: balance;
     color: var(--paper);
+    text-shadow: 0 1px 3px rgba(20,16,14,0.45), 0 3px 30px rgba(20,16,14,0.7);
   }
 
   .display .accent { color: var(--accent); }
@@ -226,6 +241,7 @@
     font-size: clamp(15px, 1.25vw, 19px);
     line-height: 1.55;
     color: color-mix(in srgb, var(--paper) 82%, transparent);
+    text-shadow: 0 1px 2px rgba(20,16,14,0.7), 0 1px 14px rgba(20,16,14,0.8);
   }
 
   /* ---- footer ---------------------------------------------------- */
@@ -242,6 +258,8 @@
     font-size: 13px;
     letter-spacing: 0.02em;
     color: color-mix(in srgb, var(--paper) 72%, transparent);
+    background: rgba(20,16,14,0.70);
+    text-shadow: 0 1px 2px rgba(20,16,14,0.7);
   }
 
   .socials {
@@ -282,75 +300,17 @@
   .motion-toggle[aria-pressed="true"] .i-play  { display: block; }
   .motion-toggle[aria-pressed="true"] .i-pause { display: none; }
 
-  /* Small phones in portrait: not enough vertical room for the plate at
-     its full height plus the type. Shrink the plate first — the type is
-     what the page is for. Keeps the footer inside the viewport at 320x568. */
+  /* Small phones: keep the whole composition inside the viewport. */
   @media (max-aspect-ratio: 6/5) and (max-height: 700px) {
-    :root { --media-h: min(34svh, 52vw); }
-    .display { font-size: clamp(29px, 8.2vw, 40px); }
-    .sub     { font-size: 14px; }
-    .lede    { gap: 10px; padding-top: 18px; padding-bottom: 18px; }
-    .masthead { padding-top: 14px; }
+    .display  { font-size: clamp(29px, 8.2vw, 40px); }
+    .sub      { font-size: 14px; }
+    .lede     { gap: 10px; --fade: 52px; padding-bottom: 16px; }
+    .masthead { padding-top: 14px; padding-bottom: 22px; }
   }
 
-  /* ===============================================================
-     Landscape / wide: the viewport is close enough to the clip's own
-     2.37:1 that a full-bleed hero keeps most of the frame. Type moves
-     onto the image and anchors to the bottom, where the scrim is
-     densest — so contrast holds on every frame of the loop rather
-     than depending on what happens to be on screen.
-     =============================================================== */
+  /* Wide enough that the headline can hold two long lines: apply the
+     hard break, and let the measure run wider. */
   @media (min-aspect-ratio: 6/5) {
-    .media {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      height: 100%;
-      margin-top: 0;
-    }
-
-    /* The scrim is now only a gentle vignette. Legibility is not its job —
-       it belongs to the plates below, which are attached to the text
-       blocks. Tying contrast to viewport percentages is what broke on
-       short and landscape-phone viewports: the copy moved, the gradient
-       didn't. These plates move with the copy. */
-    .scrim {
-      background: linear-gradient(to bottom,
-        rgba(20,16,14,0.14) 0%,
-        rgba(20,16,14,0.00) 28%,
-        rgba(20,16,14,0.00) 68%,
-        rgba(20,16,14,0.22) 100%);
-    }
-
-    /* Plate under the masthead — sized by the masthead, not the window. */
-    .masthead {
-      padding-bottom: clamp(30px, 5vh, 60px);
-      background: linear-gradient(to bottom,
-        rgba(20,16,14,0.66) 0%,
-        rgba(20,16,14,0.58) 46%,
-        rgba(20,16,14,0.30) 74%,
-        rgba(20,16,14,0.00) 100%);
-    }
-
-    main { justify-content: flex-end; }
-
-    /* Plate under the copy. The fade-in distance is a fixed length, so
-       by the time the gradient reaches the kicker it is always at full
-       density — on a 1440x600 as much as on a 1920x1080. */
-    .lede {
-      --fade: clamp(56px, 9vh, 130px);
-      padding-top: var(--fade);
-      padding-bottom: clamp(18px, 2.6vh, 36px);
-      background: linear-gradient(to bottom,
-        rgba(20,16,14,0.00) 0,
-        rgba(20,16,14,0.30) calc(var(--fade) * 0.42),
-        rgba(20,16,14,0.66) calc(var(--fade) * 0.78),
-        rgba(20,16,14,0.78) var(--fade),
-        rgba(20,16,14,0.82) 100%);
-    }
-
-    footer { background: rgba(20,16,14,0.82); }
-
     .display { max-width: 17ch; }
     .display .brk { display: inline; }
   }
